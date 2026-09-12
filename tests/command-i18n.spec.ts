@@ -46,7 +46,7 @@ describe('/mcp output language', () => {
     const zh = await mountHarness([mcpRow('mcp-github', GITHUB_CONFIG)], { outputLanguage: 'zh' })
     const enText = text(await runCommand(en, '/mcp github disable'))
     const zhText = text(await runCommand(zh, '/mcp github disable'))
-    const patchLine = "- set: { id: mcp-github, name: '@deepseek-ai/dsh-mcp-client', disabled: true }"
+    const patchLine = "- { id: mcp-github, name: '@deepseek-ai/dsh-mcp-client', disabled: true }"
     expect(enText).toContain(patchLine)
     expect(zhText).toContain(patchLine)
   })

@@ -8,8 +8,13 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { composeEntries } from '@deepseek-ai/dsh-app-boot'
+import type { PatchOptions } from '@deepseek-ai/cordis-plugin-include'
+import type { EntryOptions } from '@deepseek-ai/cordis-plugin-loader'
+import { parse } from 'yaml'
 import {
   defaultEntryId,
+  MCP_CLIENT_MODULE,
   mergeServerConfig,
   nextEntryId,
   renderPatchFragment,
@@ -100,12 +105,50 @@ describe('renderPatchFragment', () => {
   })
 
   it('renders edit, disable, and enable operations', () => {
-    expect(renderPatchFragment({ kind: 'edit', entryId: 'mcp-github', rowConfig: { serverName: 'github', transport: 'stdio', command: 'x' } }, date))
-      .toContain('- set:')
+    const edit = renderPatchFragment({ kind: 'edit', entryId: 'mcp-github', rowConfig: { serverName: 'github', transport: 'stdio', command: 'x' } }, date)
+    // `id` stays at the TOP level of the operation: a patch object carrying
+    // neither `insert` nor a top-level `id` is skipped by the loader.
+    expect(edit).toContain('- id: mcp-github')
+    expect(edit).not.toContain('- set:')
     expect(renderPatchFragment({ kind: 'disable', entryId: 'mcp-github' }, date))
-      .toContain("disabled: true")
+      .toContain("- { id: mcp-github, name: '@deepseek-ai/dsh-mcp-client', disabled: true }")
     expect(renderPatchFragment({ kind: 'enable', entryId: 'mcp-github' }, date))
-      .toContain("disabled: false")
+      .toContain("- { id: mcp-github, name: '@deepseek-ai/dsh-mcp-client', disabled: false }")
+  })
+})
+
+describe('renderPatchFragment against the real loader composition', () => {
+  const date = new Date('2026-01-02T03:04:05Z')
+  const base: PatchOptions[] = [{
+    insert: [{
+      id: 'mcp-github',
+      name: MCP_CLIENT_MODULE,
+      config: { serverName: 'github', transport: 'stdio', command: 'old' },
+    }],
+  }]
+
+  /** Compose the base layer with one rendered fragment, collecting loader warnings. */
+  function compose(fragment: string): { entries: EntryOptions[]; warnings: string[] } {
+    const warnings: string[] = []
+    const entries = composeEntries([base, parse(fragment) as PatchOptions[]], message => warnings.push(message))
+    return { entries, warnings }
+  }
+
+  it('applies an edit to the named entry', () => {
+    const fragment = renderPatchFragment({
+      kind: 'edit',
+      entryId: 'mcp-github',
+      rowConfig: { serverName: 'github', transport: 'stdio', command: 'new' },
+    }, date)
+    const { entries, warnings } = compose(fragment)
+    expect(warnings).toEqual([])
+    expect((entries[0]?.config as Record<string, unknown> | undefined)?.['command']).toBe('new')
+  })
+
+  it('applies a disable to the named entry', () => {
+    const { entries, warnings } = compose(renderPatchFragment({ kind: 'disable', entryId: 'mcp-github' }, date))
+    expect(warnings).toEqual([])
+    expect(entries[0]?.disabled).toBe(true)
   })
 })
 
