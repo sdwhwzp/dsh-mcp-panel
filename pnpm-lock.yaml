@@ -11,12 +11,6 @@ importers:
       '@deepseek-ai/dsh-subprocess':
         specifier: 0.1.5-rc.2
         version: 0.1.5-rc.2(@deepseek-ai/cordis@4.0.2)(@deepseek-ai/dsh-http-proxy@0.1.5-alpha.1(@deepseek-ai/cordis@4.0.2))
-      tsdown:
-        specifier: ^0.23.0
-        version: 0.23.0(typescript@7.0.2)
-      typescript:
-        specifier: ^7.0.0
-        version: 7.0.2
       zod:
         specifier: ^4.5.4
         version: 4.5.4
@@ -102,6 +96,12 @@ importers:
       react-dom:
         specifier: 19.2.8
         version: 19.2.8(react@19.2.8)
+      tsdown:
+        specifier: ^0.23.0
+        version: 0.23.0(typescript@7.0.2)
+      typescript:
+        specifier: ^7.0.0
+        version: 7.0.2
       vitest:
         specifier: ^5.0.0
         version: 5.0.0(@types/node@22.20.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1)(vite@8.2.2(@types/node@22.20.1))

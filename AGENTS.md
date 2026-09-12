@@ -29,7 +29,7 @@ Schema in `src/config.ts` (Schemastery, fail-loud bounds, explicit `resolveConfi
 
 ## Build
 
-`typescript` + `tsdown` are regular `dependencies` on purpose: pnpm does not install devDependencies of git-hosted packages, and the git channel's `prepare` must build with production dependencies alone. `scripts/prepare.mjs` is the single build entry (tsc declarations → `lib/types`, tsdown bundles → `lib/index.js` + `lib/typert.host.js` + `lib/client.js`).
+`typescript` + `tsdown` are `devDependencies` in this fork's `dev` branch. Upstream keeps them in `dependencies` so the git install channel's `prepare` can build with production dependencies alone; this deployment installs the packed tarball, where `lib/` is prebuilt and no lifecycle script runs, so a runtime `typescript@7` would only land in the profile beside `@deepseek-ai/dsh-typert-generator`'s `typescript@^6`. Keep the move when merging upstream, or restore both to `dependencies` if this fork ever installs from git. `scripts/prepare.mjs` is the single build entry (tsc declarations → `lib/types`, tsdown bundles → `lib/index.js` + `lib/typert.host.js` + `lib/client.js`).
 
 ## Checks
 
