@@ -331,7 +331,10 @@ export function McpPanelTab({ status, probe, previewPatch, writePatch, callTool,
                                 placeholder={t('filterTools')}
                                 aria-label={t('filterTools')}
                                 onChange={(event) => {
-                                  setToolQueries(current => ({ ...current, [row.view.serverName]: event.currentTarget.value }))
+                                  // Captured before the updater: React clears
+                                  // `currentTarget` once this handler returns.
+                                  const query = event.currentTarget.value
+                                  setToolQueries(current => ({ ...current, [row.view.serverName]: query }))
                                 }}
                               />
                               <ul className="dmcp-tools">
