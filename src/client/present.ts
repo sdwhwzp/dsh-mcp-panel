@@ -19,8 +19,11 @@ export interface PresentedServerRow {
   readonly view: McpServerView
   /** Badge tone for the connection state. */
   readonly tone: BadgeTone
-  /** Badge code: `disabled` | `failed` | a connection phase | `unknown`. */
-  readonly badge: 'disabled' | 'failed' | 'connecting' | 'connected' | 'waiting' | 'exhausted' | 'disposed' | 'unknown'
+  /**
+   * Badge code: `disabled` | `failed` | a connection phase | a registry-derived
+   * state (`registered`, `no-tools`) | `unknown`.
+   */
+  readonly badge: 'disabled' | 'failed' | 'connecting' | 'connected' | 'waiting' | 'exhausted' | 'disposed' | 'registered' | 'no-tools' | 'unknown'
   /** Whether the row shows an error badge (sanitized `lastError` present). */
   readonly hasError: boolean
   /** Display form of the reconnect count (`-1` → null = dash). */
@@ -45,7 +48,12 @@ export interface PresentedProbeRow {
 export interface PanelSummary {
   /** Servers shown in the tab. */
   readonly total: number
-  /** Servers whose connection badge reads `connected`. */
+  /**
+   * Servers whose connection badge reads `connected` or `registered`. The
+   * official client registers a server's tools only after a completed
+   * handshake and deregisters them once its reconnect budget is exhausted, so
+   * a registered row counts as connected for the header line.
+   */
   readonly connected: number
   /** Servers whose connection badge reads `failed` or `exhausted`. */
   readonly errored: number
@@ -93,8 +101,25 @@ export function connectionBadge(view: McpServerView): { badge: PresentedServerRo
     case 'waiting': return { badge: view.phase, tone: 'warn' }
     case 'exhausted': return { badge: 'exhausted', tone: 'error' }
     case 'disposed': return { badge: 'disposed', tone: 'muted' }
-    default: return { badge: 'unknown', tone: 'muted' }
+    default: return derivedBadge(view)
   }
+}
+
+/**
+ * Badge for a row without an upstream connection phase. The official client
+ * on this harness emits no `mcp/status` events, so the only observable facts
+ * are the row's Cordis fiber and the tools it registered under
+ * `mcp__<server>__`: an active fiber with tools means the handshake and
+ * `tools/list` completed; an active fiber without tools means it has not (or
+ * the reconnect budget ran out and the tools were deregistered). A pending,
+ * loading, or absent fiber says nothing about the connection yet.
+ *
+ * @param view - the assembled server view.
+ * @returns the derived badge, or `unknown` when the fiber is not active.
+ */
+function derivedBadge(view: McpServerView): { badge: PresentedServerRow['badge']; tone: BadgeTone } {
+  if (view.statusSource !== 'derived' || view.fiberPhase !== 'active') return { badge: 'unknown', tone: 'muted' }
+  return view.toolCount > 0 ? { badge: 'registered', tone: 'ok' } : { badge: 'no-tools', tone: 'warn' }
 }
 
 /** Badge for one probe state. */
@@ -159,7 +184,7 @@ export function summarizePanel(servers: readonly PresentedServerRow[]): PanelSum
   let connected = 0
   let errored = 0
   for (const row of servers) {
-    if (row.badge === 'connected') connected += 1
+    if (row.badge === 'connected' || row.badge === 'registered') connected += 1
     else if (row.badge === 'failed' || row.badge === 'exhausted') errored += 1
   }
   return { total: servers.length, connected, errored }

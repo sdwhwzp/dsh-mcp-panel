@@ -65,7 +65,18 @@ describe('connectionBadge', () => {
     expect(connectionBadge(server({ phase: 'waiting' }))).toEqual({ badge: 'waiting', tone: 'warn' })
     expect(connectionBadge(server({ phase: 'exhausted' }))).toEqual({ badge: 'exhausted', tone: 'error' })
     expect(connectionBadge(server({ phase: 'disposed' }))).toEqual({ badge: 'disposed', tone: 'muted' })
-    expect(connectionBadge(server({ phase: 'unknown' }))).toEqual({ badge: 'unknown', tone: 'muted' })
+    // No upstream phase: the fixture's active fiber with no tools derives `no-tools`.
+    expect(connectionBadge(server({ phase: 'unknown' }))).toEqual({ badge: 'no-tools', tone: 'warn' })
+  })
+
+  it('derives a registry-backed badge when no upstream status was observed', () => {
+    expect(connectionBadge(server({ toolCount: 7 }))).toEqual({ badge: 'registered', tone: 'ok' })
+    expect(connectionBadge(server({ toolCount: 0 }))).toEqual({ badge: 'no-tools', tone: 'warn' })
+    // Fiber not active yet: nothing to derive from.
+    expect(connectionBadge(server({ fiberPhase: 'loading', toolCount: 7 }))).toEqual({ badge: 'unknown', tone: 'muted' })
+    expect(connectionBadge(server({ fiberPhase: null }))).toEqual({ badge: 'unknown', tone: 'muted' })
+    // Upstream data exists but names no phase: never guess over an observed source.
+    expect(connectionBadge(server({ statusSource: 'upstream-event', toolCount: 7 }))).toEqual({ badge: 'unknown', tone: 'muted' })
   })
 })
 
@@ -152,6 +163,19 @@ describe('summarizePanel', () => {
     const model = presentMcpPanel(snapshot)
     expect(summarizePanel(model.servers)).toEqual({ total: 7, connected: 2, errored: 2 })
     expect(summarizePanel([])).toEqual({ total: 0, connected: 0, errored: 0 })
+  })
+
+  it('counts a registry-derived `registered` row as connected', () => {
+    const snapshot: McpPanelSnapshot = { ...SNAPSHOT_BASE,
+      observed: false,
+      patchFile: null,
+      refreshIntervalMs: 0,
+      servers: [server({ serverName: 'a', toolCount: 22 }), server({ serverName: 'b', toolCount: 0 })],
+      probes: [],
+    }
+    const model = presentMcpPanel(snapshot)
+    expect(model.servers.map(row => row.badge)).toEqual(['registered', 'no-tools'])
+    expect(summarizePanel(model.servers)).toEqual({ total: 2, connected: 1, errored: 0 })
   })
 
   it('agrees with the badge derivation for disabled and leftover rows', () => {

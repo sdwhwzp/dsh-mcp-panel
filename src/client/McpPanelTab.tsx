@@ -50,6 +50,8 @@ function badgeLabel(badge: PresentedServerRow['badge'], t: McpPanelTabProps['t']
     case 'waiting': return t('statusWaiting')
     case 'exhausted': return t('statusExhausted')
     case 'disposed': return t('statusDisposed')
+    case 'registered': return t('statusRegistered')
+    case 'no-tools': return t('statusNoTools')
     default: return t('statusUnknown')
   }
 }
