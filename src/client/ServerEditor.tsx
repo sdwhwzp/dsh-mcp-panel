@@ -35,6 +35,20 @@ export interface ServerEditorProps {
 let rowCounter = 0
 
 /** Render the CRUD editor. */
+/**
+ * Text for one optional number field. An absent field is `undefined`, not
+ * `null`, whenever the row simply does not configure it, and `String(undefined)`
+ * would seed the input with the literal text `undefined` — which survives the
+ * `trim() === ''` check and reaches the host as `NaN`, where validation rejects
+ * the whole operation.
+ *
+ * @param value - the configured number, or null/undefined when unset.
+ * @returns the value as text, or an empty string when unset.
+ */
+export function numberFieldText(value: number | null | undefined): string {
+  return value == null ? '' : String(value)
+}
+
 export function ServerEditor({ t, view, entryId, writeEnabled, actions, onClose, onWritten }: ServerEditorProps): ReactNode {
   const isEdit = view !== null
   const [serverName, setServerName] = useState(view?.serverName ?? '')
@@ -43,10 +57,10 @@ export function ServerEditor({ t, view, entryId, writeEnabled, actions, onClose,
   const [args, setArgs] = useState((view?.args ?? []).join('\n'))
   const [cwd, setCwd] = useState(view?.cwd ?? '')
   const [url, setUrl] = useState(view?.url ?? '')
-  const [timeout, setTimeoutText] = useState(view?.toolCallTimeoutMs === null ? '' : String(view?.toolCallTimeoutMs))
+  const [timeout, setTimeoutText] = useState(numberFieldText(view?.toolCallTimeoutMs))
   const [failFast, setFailFast] = useState(view?.failOnStartupError === true)
   const [reconnectEnabled, setReconnectEnabled] = useState(view === null || view.reconnectEnabled === null ? true : view.reconnectEnabled)
-  const [reconnectAttempts, setReconnectAttempts] = useState(view === null || view.reconnectMaxAttempts === null ? '' : String(view.reconnectMaxAttempts))
+  const [reconnectAttempts, setReconnectAttempts] = useState(numberFieldText(view?.reconnectMaxAttempts))
   const [envRows, setEnvRows] = useState<MapRow[]>(() => initialRows(view?.envKeys ?? []))
   const [headerRows, setHeaderRows] = useState<MapRow[]>(() => initialRows(view?.headerKeys ?? []))
   const [preview, setPreview] = useState<PatchPreview | null>(null)

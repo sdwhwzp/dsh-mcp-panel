@@ -12,6 +12,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import { apply, NS } from '../src/client/index.ts'
 import { MCP_PANEL_REMOTE } from '../src/client/remote.ts'
+import { numberFieldText } from '../src/client/ServerEditor.tsx'
 import { TYPERT } from '../src/typert.host.ts'
 
 /** Fake client root recording every registration the plugin makes. */
@@ -109,5 +110,20 @@ describe('client apply', () => {
     const { ctx } = makeCtx(async () => ({ ok: true, value: null }))
     await apply(ctx)
     expect(document.querySelector('style[data-dsh-mcp-panel]')).not.toBeNull()
+  })
+})
+
+describe('numberFieldText', () => {
+  it('leaves an unset optional number field empty', () => {
+    // A row that configures neither field sends `undefined`, not `null`: the
+    // literal text 'undefined' would reach the host as NaN and fail validation
+    // with "toolCallTimeoutMs must be a positive integer".
+    expect(numberFieldText(undefined)).toBe('')
+    expect(numberFieldText(null)).toBe('')
+  })
+
+  it('renders a configured value as text', () => {
+    expect(numberFieldText(30_000)).toBe('30000')
+    expect(numberFieldText(0)).toBe('0')
   })
 })
