@@ -103,6 +103,8 @@ export function McpPanelTab({ status, probe, previewPatch, writePatch, callTool,
   const [removeError, setRemoveError] = useState<string | null>(null)
   /** serverName whose enable write is in flight, or null. */
   const [enabling, setEnabling] = useState<string | null>(null)
+  /** serverName whose delete confirmation is armed, or null. */
+  const [deleteArm, setDeleteArm] = useState<string | null>(null)
 
   const reload = (): void => {
     setRequest(value => value + 1)
@@ -272,6 +274,13 @@ export function McpPanelTab({ status, probe, previewPatch, writePatch, callTool,
                               <button type="button" className="dmcp-action" onClick={() => { setEditor({ entryId: row.view.entryId, view: row.view.config }) }}>
                                 {t('editServer')}
                               </button>
+                              <button
+                                type="button"
+                                className="dmcp-action dmcp-danger"
+                                onClick={() => { setDeleteArm(row.view.serverName); setRemoveError(null) }}
+                              >
+                                {t('deleteServer')}
+                              </button>
                               {rowWriteAction(row.view) === 'remove' ? (
                                 <button
                                   type="button"
@@ -308,6 +317,31 @@ export function McpPanelTab({ status, probe, previewPatch, writePatch, callTool,
                           ) : null}
                           {!row.view.enabled && removeError !== null ? (
                             <p className="dmcp-error-text" role="alert">{removeError}</p>
+                          ) : null}
+                          {deleteArm === row.view.serverName && row.view.entryId !== '' ? (
+                            <div className="dmcp-remove">
+                              <p className="dmcp-status">{t('deleteConfirm')}</p>
+                              {removeError !== null ? <p className="dmcp-error-text" role="alert">{removeError}</p> : null}
+                              <div className="dmcp-editor-actions">
+                                <button
+                                  type="button"
+                                  className="dmcp-action dmcp-danger"
+                                  onClick={() => {
+                                    setRemoveError(null)
+                                    void Promise.resolve().then(() => writePatch(
+                                      JSON.stringify({ kind: 'delete', entryId: row.view.entryId }),
+                                      true,
+                                    )).then(
+                                      () => { setDeleteArm(null); reload() },
+                                      (error: unknown) => { setRemoveError(error instanceof Error ? error.message : String(error)) },
+                                    )
+                                  }}
+                                >
+                                  {t('confirmWrite')}
+                                </button>
+                                <button type="button" className="dmcp-action" onClick={() => { setDeleteArm(null) }}>{t('cancel')}</button>
+                              </div>
+                            </div>
                           ) : null}
                           {removeArm === row.view.serverName && row.view.entryId !== '' ? (
                             <div className="dmcp-remove">

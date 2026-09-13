@@ -9,6 +9,12 @@
  * Every write is reversible: the backup restores the previous state, and an
  * appended block can be hand-removed to undo.
  *
+ * The one exception is {@link rewritePatchFile}: a real delete has to take
+ * the entry's operations out of the file, which no append can express. It
+ * backs up first like every other write and only ever receives text the
+ * prune module produced (whole-line removals, verified as a line-subsequence
+ * of the current file).
+ *
  * @module dsh-mcp-panel/write
  */
 
@@ -94,4 +100,28 @@ async function pruneBackups(filePath: string, keep: number): Promise<void> {
       // A busy backup file only skips pruning.
     }
   }
+}
+
+/**
+ * Replace the patch file wholesale, after a timestamped backup.
+ *
+ * @param filePath - absolute path of the profile patch layer.
+ * @param text - the complete new contents.
+ * @param backupCount - backups retained (>= 1).
+ * @returns the absolute backup path and the new file size in bytes.
+ * @throws when the file does not exist (there is nothing to prune) or any
+ *   file operation fails; the backup is taken before the write, so a failed
+ *   write leaves the backup to restore from.
+ */
+export async function rewritePatchFile(
+  filePath: string,
+  text: string,
+  backupCount: number,
+): Promise<{ readonly backupPath: string; readonly bytes: number }> {
+  await readFile(filePath, 'utf8') // absent file: nothing to remove, fail loud
+  const backupPath = `${filePath}${BACKUP_SUFFIX}${Date.now()}`
+  await copyFile(filePath, backupPath)
+  await writeFile(filePath, text, 'utf8')
+  await pruneBackups(filePath, backupCount)
+  return { backupPath, bytes: Buffer.byteLength(text, 'utf8') }
 }

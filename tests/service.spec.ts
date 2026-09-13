@@ -6,7 +6,7 @@
  * @module dsh-mcp-panel/test/service.spec
  */
 
-import { mkdtemp, readFile } from 'node:fs/promises'
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { describe, expect, it } from 'vitest'
@@ -236,6 +236,52 @@ describe('console actions', () => {
     expect(result.backupPath.startsWith(`${result.file}.bak-`)).toBe(true)
     const content = await readFile(result.file, 'utf8')
     expect(content).toContain('serverName: new')
+  })
+
+  it('writePatch delete removes the entry\'s operations and keeps everything else', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'dsh-mcp-panel-service-'))
+    const file = join(dir, 'cordis.patch.yml')
+    await writeFile(file, `- id: keep-me
+  config:
+    kept: true
+
+# dsh-mcp-panel: add server (2026-09-13)
+- insert:
+    - id: mcp-github
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: github
+        transport: stdio
+
+# dsh-mcp-panel: remove server mcp-github — disabled (2026-09-13)
+- { id: mcp-github, name: '@deepseek-ai/dsh-mcp-client', disabled: true }
+`, 'utf8')
+    const harness = await mountHarness([mcpRow('mcp-github', STDIO_CONFIG)])
+    ;(harness.ctx as { baseUrl?: string }).baseUrl = dir
+
+    // The preview reports the plan without touching the file.
+    const preview = harness.service.previewPatch(JSON.stringify({ kind: 'delete', entryId: 'mcp-github' }))
+    expect(preview.ops).toBe(2)
+    expect(preview.fragment).toContain('removes 2 operation(s)')
+    expect(await readFile(file, 'utf8')).toContain('mcp-github')
+
+    const result = await harness.service.writePatch(JSON.stringify({ kind: 'delete', entryId: 'mcp-github' }), true, undefined)
+    expect(result.ops).toBe(2)
+    expect(result.backupPath.startsWith(`${file}.bak-`)).toBe(true)
+    const after = await readFile(file, 'utf8')
+    expect(after).not.toContain('mcp-github')
+    expect(after).toContain('- id: keep-me\n  config:\n    kept: true')
+    // The backup still carries the removed operations.
+    expect(await readFile(result.backupPath, 'utf8')).toContain('mcp-github')
+  })
+
+  it('writePatch delete refuses an entry the patch layer does not carry', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'dsh-mcp-panel-service-'))
+    await writeFile(join(dir, 'cordis.patch.yml'), '- id: keep-me\n  config: {}\n', 'utf8')
+    const harness = await mountHarness([mcpRow('mcp-github', STDIO_CONFIG)])
+    ;(harness.ctx as { baseUrl?: string }).baseUrl = dir
+    await expect(harness.service.writePatch(JSON.stringify({ kind: 'delete', entryId: 'mcp-absent' }), true, undefined))
+      .rejects.toThrow(/no operation in the patch layer/u)
   })
 
   it('writePatch fails closed without confirmation and without a profile path', async () => {

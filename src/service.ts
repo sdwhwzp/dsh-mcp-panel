@@ -25,6 +25,8 @@
  * @module dsh-mcp-panel/service
  */
 
+import { readFileSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Context } from '@deepseek-ai/cordis'
@@ -49,7 +51,8 @@ import {
   resolvePatchOp,
   type McpPatchResolution,
 } from './patch.ts'
-import { appendPatchFragment } from './write.ts'
+import { pruneEntryOperations } from './prune.ts'
+import { appendPatchFragment, rewritePatchFile } from './write.ts'
 import { createTrialCaller, validateTrialRequest, type McpAgentRegistryFace, type McpTrialRequest } from './trial.ts'
 import { probeJob, PROBE_KIND, type ProbeTarget } from './probe.ts'
 import { sanitizeText } from './sanitize.ts'
@@ -360,6 +363,10 @@ private readonly trialCaller = createTrialCaller()
    * @returns the fragment, the target file, and the operation count.
    */
   previewPatch(opJson: string): PatchPreview {
+    const deletion = this.resolveDelete(opJson)
+    if (deletion !== null) {
+      return { fragment: deletion.summary, file: this.patchFile(), ops: deletion.prune.ops }
+    }
     const resolution = this.resolveOp(opJson)
     if (!resolution.ok) throw this.issueError(resolution)
     return {
@@ -396,9 +403,11 @@ private readonly trialCaller = createTrialCaller()
     if (file === null) {
       throw new Error('dsh-mcp-panel: the profile patch path is unknown (no ctx.baseUrl) — cannot write')
     }
-    const resolution = this.resolveOp(opJson)
-    if (!resolution.ok) throw this.issueError(resolution)
-    const fragment = renderPatchFragment(resolution.op)
+    const deletion = this.resolveDelete(opJson)
+    const resolution = deletion === null ? this.resolveOp(opJson) : null
+    if (resolution !== null && !resolution.ok) throw this.issueError(resolution)
+    const fragment = resolution === null ? '' : renderPatchFragment(resolution.op)
+    const opKind = deletion === null ? resolution?.op.kind ?? 'unknown' : 'delete'
 
     const approval = this.ctx.get('approval') as ApprovalSeamFace | undefined
     const agents = this.ctx.get('agents') as McpAgentRegistryFace | undefined
@@ -408,7 +417,9 @@ private readonly trialCaller = createTrialCaller()
       const outcome = await approval.request({
         agent,
         toolName: 'mcp-panel/writePatch',
-        reason: `append a dsh-mcp-panel operation (${resolution.op.kind}) to the profile patch layer`,
+        reason: deletion === null
+          ? `append a dsh-mcp-panel operation (${opKind}) to the profile patch layer`
+          : `remove ${deletion.prune.ops} operation(s) for ${deletion.entryId} from the profile patch layer`,
       })
       if (outcome === ALLOWED_ONCE) {
         approvalPath = 'harness-approval'
@@ -427,6 +438,21 @@ private readonly trialCaller = createTrialCaller()
       approvalPath = 'interactive-confirmation'
     }
 
+    if (deletion !== null) {
+      // Re-prune against the CURRENT file: another writer may have appended
+      // between the preview and this confirmation, and the pruned text this
+      // write applies must be derived from what is on disk right now.
+      const fresh = pruneEntryOperations(await readFile(file, 'utf8'), deletion.entryId)
+      const written = await rewritePatchFile(file, fresh.text, this.config.backupCount)
+      return {
+        file,
+        backupPath: written.backupPath,
+        approvalPath,
+        bytes: written.bytes,
+        ops: fresh.ops,
+        note: 'Removed from cordis.patch.yml. The web surface hot-reloads edits; other surfaces restart.',
+      }
+    }
     const { backupPath, bytes } = await appendPatchFragment(file, fragment, this.config.backupCount)
     return {
       file,
@@ -502,6 +528,40 @@ private readonly trialCaller = createTrialCaller()
   }
 
   /** Resolve one wire op against the live loader facts. */
+  /**
+   * Recognize and plan a real delete: `{ kind: 'delete', entryId }` removes
+   * every operation for that entry from the patch file instead of layering
+   * another one over it. Returns null for every other operation kind so the
+   * append path handles it unchanged.
+   *
+   * The plan is computed against the file as it is right now; the write
+   * re-computes it after approval, because a plan shown to a human is not a
+   * lock on the file.
+   *
+   * @param opJson - the operation JSON the console sent.
+   * @returns the entry id, the prune plan and a human summary, or null.
+   * @throws when the operation names an entry the patch layer does not carry,
+   *   or when the file cannot be read.
+   */
+  private resolveDelete(opJson: string): { entryId: string; prune: ReturnType<typeof pruneEntryOperations>; summary: string } | null {
+    let op: unknown
+    try {
+      op = JSON.parse(opJson)
+    } catch {
+      throw new Error('dsh-mcp-panel: opJson is not valid JSON')
+    }
+    if (typeof op !== 'object' || op === null) return null
+    const record = op as Record<string, unknown>
+    if (record['kind'] !== 'delete') return null
+    const entryId = typeof record['entryId'] === 'string' ? record['entryId'] : ''
+    if (entryId === '') throw new Error('dsh-mcp-panel: delete needs an entryId')
+    const file = this.patchFile()
+    if (file === null) throw new Error('dsh-mcp-panel: the profile patch path is unknown (no ctx.baseUrl) — cannot delete')
+    const prune = pruneEntryOperations(readFileSync(file, 'utf8'), entryId)
+    const summary = `# dsh-mcp-panel: delete ${entryId}\n# removes ${prune.ops} operation(s), ${prune.lines} line(s) from ${file}\n# every other line stays byte-for-byte; a timestamped backup is taken first`
+    return { entryId, prune, summary }
+  }
+
   private resolveOp(opJson: string): McpPatchResolution {
     let op: unknown
     try {
