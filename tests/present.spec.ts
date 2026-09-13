@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { connectionBadge, filterServers, presentMcpPanel, probeBadge, summarizePanel } from '../src/client/present.ts'
+import { connectionBadge, filterServers, presentMcpPanel, probeBadge, rowWriteAction, summarizePanel } from '../src/client/present.ts'
 import type { McpPanelSnapshot, McpServerView } from '../src/wire.ts'
 
 function server(overrides: Partial<McpServerView> = {}): McpServerView {
@@ -220,5 +220,12 @@ describe('filterServers', () => {
     expect(filterServers(all, 'git.example.com').map(row => row.view.serverName)).toEqual(['gitlab'])
     expect(filterServers(all, 'npx').map(row => row.view.serverName)).toEqual(['Everything'])
     expect(filterServers(all, 'absent')).toEqual([])
+  })
+})
+
+describe('rowWriteAction', () => {
+  it('offers enable for a disabled row and remove for a live one', () => {
+    expect(rowWriteAction(server({ enabled: false }))).toBe('enable')
+    expect(rowWriteAction(server({ enabled: true }))).toBe('remove')
   })
 })

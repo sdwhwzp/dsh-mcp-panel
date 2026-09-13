@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import { filterServers, presentMcpPanel, probeBadge, summarizePanel, type BadgeTone, type PresentedServerRow } from './present.ts'
+import { filterServers, presentMcpPanel, probeBadge, summarizePanel, type BadgeTone, type PresentedServerRow, rowWriteAction } from './present.ts'
 import { ServerEditor } from './ServerEditor.tsx'
 import { TrialConsole } from './TrialConsole.tsx'
 import type {
@@ -101,6 +101,8 @@ export function McpPanelTab({ status, probe, previewPatch, writePatch, callTool,
   // Armed removal (a disable-patch write) per server namespace.
   const [removeArm, setRemoveArm] = useState<string | null>(null)
   const [removeError, setRemoveError] = useState<string | null>(null)
+  /** serverName whose enable write is in flight, or null. */
+  const [enabling, setEnabling] = useState<string | null>(null)
 
   const reload = (): void => {
     setRequest(value => value + 1)
@@ -270,14 +272,42 @@ export function McpPanelTab({ status, probe, previewPatch, writePatch, callTool,
                               <button type="button" className="dmcp-action" onClick={() => { setEditor({ entryId: row.view.entryId, view: row.view.config }) }}>
                                 {t('editServer')}
                               </button>
-                              <button
-                                type="button"
-                                className="dmcp-action dmcp-danger"
-                                onClick={() => { setRemoveArm(row.view.serverName); setRemoveError(null) }}
-                              >
-                                {t('removeServer')}
-                              </button>
+                              {rowWriteAction(row.view) === 'remove' ? (
+                                <button
+                                  type="button"
+                                  className="dmcp-action dmcp-danger"
+                                  onClick={() => { setRemoveArm(row.view.serverName); setRemoveError(null) }}
+                                >
+                                  {t('removeServer')}
+                                </button>
+                              ) : (
+                                // A disabled row is only ever disabled by an appended
+                                // operation, so the way back is another operation — without
+                                // this button the row could only be revived by hand-editing
+                                // the patch file or running `/mcp <server> enable`.
+                                <button
+                                  type="button"
+                                  className="dmcp-action"
+                                  disabled={enabling === row.view.serverName}
+                                  onClick={() => {
+                                    setRemoveError(null)
+                                    setEnabling(row.view.serverName)
+                                    void Promise.resolve().then(() => writePatch(
+                                      JSON.stringify({ kind: 'enable', entryId: row.view.entryId }),
+                                      true,
+                                    )).then(
+                                      () => { setEnabling(null); reload() },
+                                      (error: unknown) => { setEnabling(null); setRemoveError(error instanceof Error ? error.message : String(error)) },
+                                    )
+                                  }}
+                                >
+                                  {t('enableServer')}
+                                </button>
+                              )}
                             </div>
+                          ) : null}
+                          {!row.view.enabled && removeError !== null ? (
+                            <p className="dmcp-error-text" role="alert">{removeError}</p>
                           ) : null}
                           {removeArm === row.view.serverName && row.view.entryId !== '' ? (
                             <div className="dmcp-remove">

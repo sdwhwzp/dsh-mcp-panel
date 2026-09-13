@@ -122,6 +122,18 @@ function derivedBadge(view: McpServerView): { badge: PresentedServerRow['badge']
   return view.toolCount > 0 ? { badge: 'registered', tone: 'ok' } : { badge: 'no-tools', tone: 'warn' }
 }
 
+/**
+ * Which write action one row offers. A disabled row is disabled by an appended
+ * operation, so the only way back is another operation: offering "remove"
+ * again would leave the row unreachable from the console.
+ *
+ * @param view - the assembled server view.
+ * @returns `remove` for a live row, `enable` for a disabled one.
+ */
+export function rowWriteAction(view: McpServerView): 'remove' | 'enable' {
+  return view.enabled ? 'remove' : 'enable'
+}
+
 /** Badge for one probe state. */
 export function probeBadge(status: McpProbeView['status']): { badge: PresentedProbeRow['badge']; tone: BadgeTone } {
   switch (status) {
