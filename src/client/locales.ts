@@ -134,7 +134,15 @@ export const zh = {
   capabilities: '能力一览',
   capResources: 'Resources',
   capPrompts: 'Prompts',
-  capPending: '待官方支持——官方 client 尚未桥接该能力（Tools 是当前唯一桥接的 MCP 能力）。',
+  capPending: '待官方支持——官方 client 尚未桥接该能力（prompt 模板与资源订阅仍待上游）。',
+  // --- Resources browser ---
+  resources: '资源（只读浏览）',
+  resourceHint: '经官方 list_mcp_resources / list_mcp_resource_templates / read_mcp_resource 工具只读浏览；结果只显示在本页，不会进入模型上下文。',
+  resourceList: '列出',
+  resourceTemplates: '模板',
+  resourceRead: '读取',
+  resourceUri: '资源 URI',
+  resourceEmpty: '没有返回资源条目（或该服务器未提供资源）。',
 } satisfies Record<string, string>
 
 /** MCP panel locale key union. */
@@ -274,5 +282,13 @@ export const en = {
   capabilities: 'Capabilities',
   capResources: 'Resources',
   capPrompts: 'Prompts',
-  capPending: 'Pending upstream support — the official client does not bridge this capability yet (tools are the only bridged MCP capability today).',
+  capPending: 'Pending upstream support — the official client does not bridge this capability yet (prompt templates and resource subscriptions remain deferred).',
+  // --- Resources browser ---
+  resources: 'Resources (read-only browse)',
+  resourceHint: 'Read-only browse through the official list_mcp_resources / list_mcp_resource_templates / read_mcp_resource tools; results are shown only here and never enter model context.',
+  resourceList: 'List',
+  resourceTemplates: 'Templates',
+  resourceRead: 'Read',
+  resourceUri: 'Resource URI',
+  resourceEmpty: 'No resource entries returned (or this server exposes none).',
 } satisfies Record<McpPanelLocaleKey, string>

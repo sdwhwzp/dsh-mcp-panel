@@ -104,17 +104,24 @@ describe('renderPatchFragment', () => {
     expect(fragment).not.toContain('!!js')
   })
 
-  it('renders edit, disable, and enable operations', () => {
+  it('renders edit, disable, and enable as id-targeted overrides (the loader dialect)', () => {
     const edit = renderPatchFragment({ kind: 'edit', entryId: 'mcp-github', rowConfig: { serverName: 'github', transport: 'stdio', command: 'x' } }, date)
-    // `id` stays at the TOP level of the operation: a patch object carrying
-    // neither `insert` nor a top-level `id` is skipped by the loader.
-    expect(edit).toContain('- id: mcp-github')
     expect(edit).not.toContain('- set:')
-    expect(renderPatchFragment({ kind: 'disable', entryId: 'mcp-github' }, date))
-      .toContain("- { id: mcp-github, name: '@deepseek-ai/dsh-mcp-client', disabled: true }")
-    expect(renderPatchFragment({ kind: 'enable', entryId: 'mcp-github' }, date))
-      .toContain("- { id: mcp-github, name: '@deepseek-ai/dsh-mcp-client', disabled: false }")
+    expect(edit).toContain('- id: mcp-github')
+    expect(edit).toContain("name: '@deepseek-ai/dsh-mcp-client'")
+    expect(edit).toContain('config:')
+    expect(edit).toContain('serverName: github')
+    const disable = renderPatchFragment({ kind: 'disable', entryId: 'mcp-github' }, date)
+    expect(disable).not.toContain('- set:')
+    expect(disable).toContain('- id: mcp-github')
+    expect(disable).toContain("name: '@deepseek-ai/dsh-mcp-client'")
+    expect(disable).toContain('disabled: true')
+    const enable = renderPatchFragment({ kind: 'enable', entryId: 'mcp-github' }, date)
+    expect(enable).not.toContain('- set:')
+    expect(enable).toContain('- id: mcp-github')
+    expect(enable).toContain('disabled: false')
   })
+
 })
 
 describe('renderPatchFragment against the real loader composition', () => {

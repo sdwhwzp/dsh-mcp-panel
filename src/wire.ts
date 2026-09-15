@@ -187,7 +187,7 @@ export interface McpPanelSnapshot {
   servers: readonly McpServerView[]
   /** Connectivity probes this process, newest first. */
   probes: readonly McpProbeView[]
-  /** Resources/Prompts availability (the official client exposes neither yet). */
+  /** Resources availability (bridged by the shipped `dsh-mcp-resources` service) and Prompts (still deferred upstream). */
   capabilities: {
     resources: McpCapabilityView
     prompts: McpCapabilityView
@@ -286,9 +286,24 @@ export const MCP_PANEL_SNAPSHOT_SCHEMA = z.object({
   })),
 })
 
-/** Share identical validation with eager Hosts and Harness 0.1.6 codec factories. */
-function strictCodec<S extends z.ZodType>(typeSymbol: string, schema: S) {
-  return Object.freeze({ mode: 'strict' as const, typeSymbol, schema, create: () => schema })
+/**
+ * Dual-shape strict Typert codec, compatible with BOTH published codec
+ * generations: every published harness line (through `0.1.6-alpha.1`) reads
+ * `codec.schema` (a zod v4 instance), while current master reads
+ * `codec.create()` (a schema factory). Carrying both fields keeps the same
+ * built bundle working on either loader; each loader ignores the field it
+ * does not read.
+ *
+ * @param typeSymbol - generated type identity for diagnostics.
+ * @param schema - the zod v4 schema that validates the boundary value.
+ */
+function strictCodec(typeSymbol: string, schema: z.ZodType): {
+  readonly mode: 'strict'
+  readonly typeSymbol: string
+  readonly schema: z.ZodType
+  readonly create: () => z.ZodType
+} {
+  return { mode: 'strict', typeSymbol, schema, create: () => schema }
 }
 
 /**
@@ -305,7 +320,7 @@ export const MCP_PANEL_STATUS_DESCRIPTOR = Object.freeze({
   method: 'status',
   invocation: Object.freeze({ kind: 'direct' }),
   parameters: Object.freeze([]),
-  result: strictCodec('dsh-mcp-panel/types#McpPanelSnapshot', MCP_PANEL_SNAPSHOT_SCHEMA),
+  result: Object.freeze(strictCodec('dsh-mcp-panel/types#McpPanelSnapshot', MCP_PANEL_SNAPSHOT_SCHEMA)),
   sourceLocation: Object.freeze({ file: 'src/wire.ts', line: 1, column: 1 }),
 } as const) satisfies InvocationDescriptor
 
