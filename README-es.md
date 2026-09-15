@@ -136,6 +136,8 @@ Todas las opciones son campos Schemastery `Config` (modificables desde cordis.ym
 | `backupCount` | `5` | Copias de `cordis.patch.yml` retenidas por escritura |
 | `catalogEntries` | `[]` | Superposición de usuario para el directorio recomendado: anexa entradas; una entrada con el mismo `id` reemplaza la integrada |
 
+Las solicitudes de Claude omiten `mcp_probe`; los demás proveedores lo conservan si está habilitado. Las herramientas MCP configuradas y las pruebas manuales del panel siguen disponibles. El cambio de proveedor se aplica en la siguiente solicitud.
+
 ## Tools & surfaces
 
 | Superficie | Tipo | Notas |

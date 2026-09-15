@@ -142,6 +142,8 @@ All tunables are Schemastery `Config` fields (changeable from cordis.yml). `cord
 | `backupCount` | `5` | `cordis.patch.yml` backups retained per write |
 | `catalogEntries` | `[]` | User overlay for the recommended server directory: entries append, an entry with the same `id` replaces the built-in one |
 
+Claude requests omit `mcp_probe`; other providers retain it when enabled. Configured MCP tools and manual panel probes remain available. Switching providers takes effect on the next request.
+
 ## Tools & surfaces
 
 | Surface | Kind | Notes |

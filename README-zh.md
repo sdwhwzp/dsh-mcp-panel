@@ -138,6 +138,8 @@ dsh --profile web --dump-config | grep -A3 'id: mcp-panel'
 | `backupCount` | `5` | 每次写入保留的 `cordis.patch.yml` 备份数 |
 | `catalogEntries` | `[]` | 推荐服务器目录的用户覆盖：追加条目，同 `id` 的条目替换内置条目 |
 
+Claude 请求不包含 `mcp_probe`；启用时其他 Provider 仍可使用。已配置的 MCP 工具和面板手动探测保持可用，切换 Provider 后在下一轮请求生效。
+
 ## Tools & surfaces
 
 | 表面 | 类型 | 说明 |
