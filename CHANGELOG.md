@@ -1,6 +1,24 @@
 # Changelog
 
+## [0.6.19-dsh.20260926.1] - 2026-09-26
+
+- Uses the upstream Harness 0.1.7-rc.2 host pins and subprocess dependency.
+- Keeps Claude-only probe filtering and the deployment fork's panel and patch-management adaptations; build tools remain development dependencies for prebuilt tarball deployment.
+
 All notable changes to this project are documented in this file.
+
+## [Unreleased]
+
+## [0.6.19] - 2026-09-25
+
+### Changed
+
+- Host pins move to `0.1.7-rc.2`; re-verified against that host line. Every `@deepseek-ai/dsh-*` dev/test dependency now pins `0.1.7-rc.2`, the `dshWorkshop.compatibility.dshVersions` timeline appends `0.1.7-rc.2`, and the compatibility baseline in every README records the `dsh-v0.1.7-rc.2` host. The declared host ranges (`engines.dsh` and the `peerDependencies` union) are deliberately **unchanged** — they already admit `0.1.7-rc.2`, and a range is what the manifest accepts, not what has been tested.
+
+## [0.6.18] - 2026-09-24
+### Changed
+
+- Move the `@deepseek-ai/dsh-*` pins from `0.1.7-alpha.2` to `0.1.7-rc.1` and re-verify against that host line. `dshWorkshop.compatibility.dshVersions` records `0.1.7-rc.1` alongside the earlier lines, the five READMEs name `dsh-v0.1.7-rc.1`, and the compat workflow installs the `0.1.7-rc.1` host (`@deepseek-ai/dsh`, `dsh-base`, `dsh-headless`). The declared peer ranges and `engines.dsh` are deliberately **unchanged**: the existing four-clause union already admits `0.1.7-rc.1`, and the family convention keeps the declared range wider than the verified line. `0.1.7-rc.1` carries no plugin-facing seam change over `0.1.7-alpha.2` — the host's core packages differ only in their version fields — so no source or test expectation had to change. The `@deepseek-ai/dsh-subprocess` **runtime** dependency moves with the dev pins, so the tree holds a single host line.
 
 ## [0.6.17] - 2026-09-23
 

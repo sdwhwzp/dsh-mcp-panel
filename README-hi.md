@@ -25,11 +25,18 @@
 
 ---
 
+<!-- star-cta -->
+## ⭐ 如果它帮到了你
+
+यह प्लगइन [DSH प्लगइन परिवार](https://github.com/PerryLink) का हिस्सा है (40+ प्लगइन, सभी Apache-2.0)। अगर यह उपयोगी लगे, तो **एक स्टार दें** — इससे कोई सुविधा अनलॉक नहीं होती, पर अगला व्यक्ति इसे खोज में आसानी से पा लेता है।
+
+*English:* part of a 40+ plugin family for DeepSeek Harness. If it is useful, **a star helps the next person find it** — nothing is gated behind it.
+
 ## Compatibility
 
 | सतह | स्थिति |
 |---|---|
-| Harness | DeepSeek Harness `dsh-v0.1.7-alpha.2` (2026-09-18 को सत्यापित): `0.1.6-alpha.2` dev/test फ़ेस पर दोनों typecheck रूलर हरे (यह रेपो परिवार का कैनरी है — कोई नई त्रुटि नहीं आई), 174 टेस्ट, और पूर्ण गेट शृंखला (typecheck / typecheck:ci / test / build / verify / package)। `writePatch` का पुनः-सत्यापन इस लाइन पर मान्य है। पिछली आधार रेखा: `dsh-v0.1.7-alpha.1` (2026-09-16 को सत्यापित)। |
+| Harness | DeepSeek Harness `dsh-v0.1.7-rc.2` (2026-09-25 को सत्यापित): `0.1.6-alpha.2` dev/test फ़ेस पर दोनों typecheck रूलर हरे (यह रेपो परिवार का कैनरी है — कोई नई त्रुटि नहीं आई), 174 टेस्ट, और पूर्ण गेट शृंखला (typecheck / typecheck:ci / test / build / verify / package)। `writePatch` का पुनः-सत्यापन इस लाइन पर मान्य है। पिछली आधार रेखा: `dsh-v0.1.7-alpha.1` (2026-09-16 को सत्यापित)। |
 | Node | `^22.19.0 \|\| >=24.0.0` |
 | प्लेटफ़ॉर्म | Web GUI (दोहरा चेहरा: host + browser) |
 | मॉडल | कोई भी (पैनल रीड-ओनली है; केवल `/mcp` आउटपुट मॉडल-पठनीय है) |

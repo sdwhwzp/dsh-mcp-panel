@@ -28,11 +28,19 @@
 
 ---
 
+<!-- star-cta -->
+## ⭐ 如果它帮到了你
+
+这个插件是 [DSH 插件家族](https://github.com/PerryLink)的一员（40+ 个，全部 Apache-2.0）。如果你在用，**给个 star** —— 它不会解锁任何功能，但会让下一个人在搜索里更容易找到它。
+
+*English:* part of a 40+ plugin family for DeepSeek Harness. If it is useful, **a star helps the next person find it** — nothing is gated behind it.
+
+
 ## Compatibility
 
 | Surface | Status |
 |---|---|
-| Harness | DeepSeek Harness `dsh-v0.1.7-alpha.2` (verified 2026-09-18): dual typecheck rulers green on the `0.1.6-alpha.2` dev/test face (this repo is the family's canary — no new errors surfaced), 174 tests, and the full gate chain (typecheck / typecheck:ci / test / build / verify / package). The `writePatch` re-verification assertion stands on this line. Previous baseline: `dsh-v0.1.7-alpha.1` (verified 2026-09-16). |
+| Harness | DeepSeek Harness `dsh-v0.1.7-rc.2` (verified 2026-09-25): dual typecheck rulers green on the `0.1.6-alpha.2` dev/test face (this repo is the family's canary — no new errors surfaced), 174 tests, and the full gate chain (typecheck / typecheck:ci / test / build / verify / package). The `writePatch` re-verification assertion stands on this line. Previous baseline: `dsh-v0.1.7-alpha.1` (verified 2026-09-16). |
 | Node | `^22.19.0 \|\| >=24.0.0` |
 | Platforms | Web GUI (dual-face: host + browser) |
 | Model | Any (the panel is read-only; only `/mcp` output is model-readable) |
