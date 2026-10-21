@@ -55,6 +55,8 @@ describe('validateServerConfig', () => {
     expect(validateServerConfig(null).ok).toBe(false)
     expect(validateServerConfig('x').ok).toBe(false)
     expect(validateServerConfig({ serverName: 'a', transport: 'stdio', command: 'x', env: { K: 1 } }).ok).toBe(false)
+    const control = validateServerConfig({ serverName: 'a', transport: 'stdio', command: 'x', env: { 'A\n- insert:': 'v' } })
+    expect(control.ok).toBe(false)
   })
 })
 
@@ -102,6 +104,22 @@ describe('renderPatchFragment', () => {
     expect(fragment).toContain("  - 'has space'")
     expect(fragment).toContain("TOKEN: 'yes'")
     expect(fragment).not.toContain('!!js')
+  })
+
+  it('quotes control characters in env/header keys so they cannot inject a new patch row', () => {
+    const fragment = renderPatchFragment({
+      kind: 'add',
+      entryId: 'mcp-evil',
+      rowConfig: {
+        serverName: 'evil',
+        transport: 'stdio',
+        command: 'node',
+        env: { 'A\n- insert:\n    - id: evil\n      name: evil': 'v' },
+      },
+    }, date)
+    expect(fragment.match(/^- insert:/gmu)).toHaveLength(1)
+    expect(fragment).toContain('"A\\n- insert:')
+    expect(fragment).not.toContain('A\n- insert:')
   })
 
   it('renders edit, disable, and enable as id-targeted overrides (the loader dialect)', () => {

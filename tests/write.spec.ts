@@ -57,6 +57,17 @@ describe('appendPatchFragment', () => {
     expect(content.match(/- insert:/g)).toHaveLength(2)
   })
 
+  it('replaces an empty root list instead of appending after it', async () => {
+    const dir = await tempDir()
+    const file = join(dir, 'cordis.patch.yml')
+    await writeFile(file, '# hand-written comment\n[]\n', 'utf8')
+    await appendPatchFragment(file, FRAGMENT, 5)
+    const content = await readFile(file, 'utf8')
+    expect(content).toContain('# hand-written comment')
+    expect(content.trim().split('\n').some(line => line.trim() === '[]')).toBe(false)
+    expect(content.match(/- insert:/g)).toHaveLength(1)
+  })
+
   it('prunes backups beyond the retention count (newest kept)', async () => {
     const dir = await tempDir()
     const file = join(dir, 'cordis.patch.yml')

@@ -14,7 +14,25 @@
  * @module dsh-mcp-panel/probe
  */
 
-import { spawn } from 'node:child_process'
+/**
+ * Kill a stdio probe child and, on Windows, its whole process tree.
+ * `child.kill()` only signals the direct child; MCP servers frequently wrap
+ * `npx`/`cmd`, leaving the real server and its descendants alive.
+ * @param child - spawned probe child.
+ */
+function killProcessTree(child: ReturnType<typeof spawn> | undefined): void {
+  try {
+    if (process.platform === 'win32' && child?.pid !== undefined) {
+      execFile('taskkill', ['/pid', String(child.pid), '/T', '/F'], { windowsHide: true }, () => {})
+      return
+    }
+    child?.kill()
+  } catch {
+    /* already gone */
+  }
+}
+
+import { execFile, spawn } from 'node:child_process'
 import type { JobHooks, JobOutcome, JobRegistry } from '@deepseek-ai/dsh-jobs'
 import { scrubbedParentEnv } from '@deepseek-ai/dsh-subprocess'
 import type { ToolDefinition } from '@deepseek-ai/dsh-tools'
@@ -38,7 +56,7 @@ const INITIALIZE_PROTOCOL_VERSION = '2024-11-05'
 /** MCP clientInfo facts; protocol constants, not configuration. Exported so the
  * version-consistency tripwire (`tests/version.spec.ts`) can assert the
  * advertised version tracks the package version. */
-export const PROBE_CLIENT_INFO = { name: 'dsh-mcp-panel', version: '0.6.22-dsh.20261007.1' }
+export const PROBE_CLIENT_INFO = { name: 'dsh-mcp-panel', version: '0.6.29-dsh.20261021.1' }
 
 /** One settled probe: outcome status plus a sanitized one-line detail. */
 export interface ProbeOutcome {
@@ -159,7 +177,7 @@ export function probeStdio(
       if (settled) return
       settled = true
       if (timer !== undefined) clearTimeout(timer)
-      try { child?.kill() } catch { /* already gone */ }
+      killProcessTree(child)
       resolve(outcome)
     }
     timer = setTimeout(() => {

@@ -138,8 +138,8 @@ export function validateServerConfig(input: unknown): McpConfigValidation {
       return
     }
     for (const [key, entryValue] of Object.entries(candidate as Record<string, unknown>)) {
-      if (key.trim() === '' || typeof entryValue !== 'string') {
-        issues.push({ code, text: `${label} keys must be non-empty and values must be strings.` })
+      if (key.trim() === '' || /[\u0000-\u001f\u007f]/u.test(key) || typeof entryValue !== 'string') {
+        issues.push({ code, text: `${label} keys must be non-empty printable strings and values must be strings.` })
         return
       }
     }
@@ -443,7 +443,7 @@ function emitBlock(lines: string[], keyLine: string, value: Record<string, unkno
   }
   lines.push(keyLine)
   const pad = ' '.repeat(indent)
-  for (const [key, entry] of entries) emitValue(lines, `${pad}${key}`, entry, indent)
+  for (const [key, entry] of entries) emitValue(lines, `${pad}${yamlScalar(key)}`, entry, indent)
 }
 
 /** Emit one JSON-ish value under a `key` prefix. */

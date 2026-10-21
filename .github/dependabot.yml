@@ -5,16 +5,20 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      npm-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
     ignore:
-      # @types/node tracks the engines floor (Node 22); major bumps to the
-      # 26.x line would describe APIs the supported runtime does not have.
-      - dependency-name: '@types/node'
-        update-types: ['version-update:semver-major']
-      # The coverage provider's major must match the vitest major we run, and
-      # `vitest` stays on a caret range so that upgrade is deliberate. v5 removes
-      # the deprecated coverage options and requires `coverageFilesDirectory`,
-      # which vitest.config.ts does not set yet: dependabot PR #22 failed with
-      # "AssertionError: coverageFilesDirectory is required" (18 errors) and was
-      # closed. Drop this entry in the same commit as the v5 migration.
-      - dependency-name: '@vitest/coverage-v8'
-        update-types: ['version-update:semver-major']
+      # Major upgrades are reviewed by hand; security updates are separate.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      actions-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]

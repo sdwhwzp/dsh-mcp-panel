@@ -1,0 +1,14 @@
+[
+  {
+    "path": "docs/assets/dsh-mcp-panel-hero.png",
+    "kind": "hero",
+    "alt": "dsh-mcp-panel terminal output",
+    "caption": "Real dsh-mcp-panel test run; 174 tests passed."
+  },
+  {
+    "path": "docs/assets/dsh-mcp-panel-demo.gif",
+    "kind": "demo",
+    "alt": "Animated dsh-mcp-panel terminal session",
+    "caption": "The same run, assembled line by line."
+  }
+]

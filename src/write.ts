@@ -26,7 +26,6 @@ const BACKUP_SUFFIX = '.bak-'
 /** Fresh-file header when the patch layer does not exist yet. */
 const FRESH_FILE_HEADER = `# dsh-mcp-panel managed patch layer (created by the MCP console).
 # Operations are APPEND-ONLY: the console never rewrites existing content.
-[]
 `
 
 /**
@@ -69,11 +68,31 @@ export async function appendPatchFragment(
   return { backupPath, bytes }
 }
 
+/**
+ * A patch layer that only contains an empty root list (`[]`) plus comments is
+ * not a valid prefix for an appended operation: `[]` ends the YAML document.
+ * Removing that one sentinel is the only rewrite this module performs; any
+ * real row keeps the append-only guarantee.
+ */
+function stripEmptyRootList(content: string): string {
+  const lines = content.split('\n')
+  let emptyRoot = false
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed === '' || trimmed.startsWith('#')) continue
+    if (trimmed === '[]') { emptyRoot = true; continue }
+    return content
+  }
+  if (!emptyRoot) return content
+  return lines.filter(line => line.trim() !== '[]').join('\n')
+}
+
 /** Append one fragment with surrounding newlines, normalizing a trailing newline first. */
 async function appendFragment(filePath: string, fragment: string): Promise<number> {
   const content = await readFile(filePath, 'utf8')
-  const normalized = content.endsWith('\n') ? content : `${content}\n`
-  const block = normalized.endsWith('\n\n') ? `${fragment}\n` : `\n${fragment}\n`
+  const base = stripEmptyRootList(content)
+  const normalized = base.endsWith('\n') ? base : `${base}\n`
+  const block = normalized.endsWith('\n\n') || normalized === '' ? `${fragment}\n` : `\n${fragment}\n`
   await writeFile(filePath, `${normalized}${block}`, 'utf8')
   // Readback: the appended block must survive exactly as written — a partial
   // write would otherwise surface as a "written" success (issue #27 hardening).
