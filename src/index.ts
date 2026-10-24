@@ -36,7 +36,7 @@ import type {} from '@deepseek-ai/dsh-jobs'
 import { Config, resolveConfig } from './config.ts'
 import { mcpCommand } from './command.ts'
 import { mcpProbeTool } from './probe.ts'
-import { installProbeModelFilter } from './probe-model-filter.ts'
+import { installProbeModelFilter, registerModelProbe } from './probe-model-filter.ts'
 import { McpPanelService } from './service.ts'
 import { DEFAULT_CATALOG, mergeCatalog } from './catalog.ts'
 import { MCP_STATUS_EVENT, type McpStatusQuery } from './upstream.ts'
@@ -132,7 +132,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     scope.effect(() => scope.jobs.attachController('dsh-mcp-panel'), 'dsh-mcp-panel: jobs controller')
     if (resolved.probeEnabled) {
       installProbeModelFilter(scope)
-      scope.effect(() => scope.tools.register(mcpProbeTool(service, scope.jobs, resolved.probeTimeoutMs)), 'dsh-mcp-panel: probe tool')
+      scope.effect(() => registerModelProbe(scope, mcpProbeTool(service, scope.jobs, resolved.probeTimeoutMs)), 'dsh-mcp-panel: probe tool')
     }
   })
 }

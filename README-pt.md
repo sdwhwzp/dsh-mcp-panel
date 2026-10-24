@@ -75,6 +75,8 @@ O `dsh-mcp-panel` é a camada de experiência sobre o cliente MCP oficial: uma v
 - **Comando `/mcp`** — uma linha por servidor: transporte, destino, contagem de ferramentas, status de conexão (do seam upstream; `unknown` quando não observado), último erro, reconexões — legível pelo modelo, reconstruível do log da sessão, cinco idiomas de saída.
 - **`/mcp <servidor> tools`** — nomes e descrições das ferramentas `mcp__*` visíveis para o modelo.
 - **`/mcp <servidor> health`** — sugestões de autorreparo derivadas (ENOENT → dependência ausente, ECONNREFUSED, timeouts, 401/403/404, DNS, rate limit, reconexão esgotada…); código de saída / cauda de stderr rotulados honestamente como *aguardando suporte upstream*.
+Os testes usam um lote sem registro de etapas do modelo nas versões com executores e a API de chamada individual nas instalações anteriores. Os dois caminhos preservam as permissões e a política de aprovação ativas.
+
 - **`/mcp <servidor> call <tool> [json]`** — chamada de teste pelo **pipeline oficial de ferramentas** (`ctx.tools.execute()`); política de permissão pré-execução, aprovação, guards e pós-execução, tudo em vigor.
 - **Configurações → Plugins → MCP** — cartões de status com selos, diagnósticos e sondas, mais o CRUD de servidores e o banco de testes de ferramentas.
 - **CRUD de servidores** — formulários de adicionar/editar/remover → `insert` para adicionar e anulações dirigidas por id (`- id:` + `name:` + `disabled:`/`config:`) para editar/remover → cópia para a área de transferência ou gravação com aprovação, backups automáticos e re-verificação contra o loader.

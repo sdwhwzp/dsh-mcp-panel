@@ -80,6 +80,8 @@ Official client = bridge, this plugin = console: read status through the `mcp/st
 - **`/mcp <server> health`** — derived self-heal suggestions (ENOENT → missing dependency, ECONNREFUSED, timeouts, 401/403/404, DNS, rate limit, reconnect exhaustion…); exit code / stderr tail honestly labeled *pending upstream support* until the client exposes them.
 - **`/mcp <server> disable` / `enable`** — turn one server row off or back on without editing the profile patch by hand.
 - **`/mcp <server> probe`** — one Streamable HTTP connectivity probe for that server (background job).
+Trials use one unlogged batch on executor-based Harness releases and the released single-call API on older installations. Both paths retain the active tool permissions and approval policy.
+
 - **`/mcp <server> call <tool> [json]`** — trial-call through the **official tool pipeline** (`ctx.tools.execute()`); pre-execute permission policy, approval, guards, and post-execute all apply.
 - **Settings → Plugins → MCP tab** — status cards with badges, diagnostics, and probes, plus the server CRUD and the tool trial console.
 - **Server CRUD** — add/edit/remove forms → `insert` for add and id-targeted overrides (`- id:` + `name:` + `disabled:`/`config:`) for edit/remove → clipboard copy or approval-gated write with automatic backups and loader re-verification.

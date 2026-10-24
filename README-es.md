@@ -75,6 +75,8 @@ Cliente oficial = puente, este plugin = consola: lee el estado por el seam `mcp/
 - **Comando `/mcp`** — una fila por servidor: transporte, destino, número de herramientas, estado de conexión (desde el seam upstream; `unknown` cuando no hay observación), último error, reconexiones — legible por el modelo, reconstruible del log de sesión, cinco idiomas de salida.
 - **`/mcp <servidor> tools`** — nombres y descripciones de las herramientas `mcp__*` visibles para el modelo.
 - **`/mcp <servidor> health`** — sugerencias de autorreparación derivadas (ENOENT → dependencia faltante, ECONNREFUSED, timeouts, 401/403/404, DNS, rate limit, reconexión agotada…); código de salida / stderr etiquetados honestamente como *pendiente de soporte upstream*.
+Las pruebas usan un lote sin registro de pasos del modelo en las versiones con ejecutores y la API de llamada individual en instalaciones anteriores. Ambas rutas conservan los permisos y la política de aprobación activos.
+
 - **`/mcp <servidor> call <tool> [json]`** — llamada de prueba por el **pipeline oficial de herramientas** (`ctx.tools.execute()`); política de permisos pre-ejecución, aprobación, guards y post-ejecución, todo en vigor.
 - **Ajustes → Plugins → MCP** — tarjetas de estado con insignias, diagnósticos y sondas, más el CRUD de servidores y el banco de pruebas de herramientas.
 - **CRUD de servidores** — formularios de alta/edición/borrado → `insert` para alta y anulaciones dirigidas por id (`- id:` + `name:` + `disabled:`/`config:`) para edición/borrado → copia al portapapeles o escritura con aprobación, copias de seguridad automáticas y re-verificación contra el loader.
