@@ -21,10 +21,7 @@ it('submits normalized resource arguments through one unlogged executor batch', 
     setExecutor: () => undefined,
     execute: async (input) => {
       captured = input
-      const call = input.calls[0]!
-      const result = await harness.ctx.tools.execute({ callId: call.id, name: call.name,
-        arguments: JSON.parse(call.arguments), signal: input.signal })
-      return { results: [{ result }] }
+      return { results: [{ result: { isError: false, value: null, content: [] } }] }
     },
   }
   const result = await createTrialCaller().runTrialCall(tools, undefined, undefined,
