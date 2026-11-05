@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.30] - 2026-11-04
+
+### Changed
+
+- Declare `dsh.capabilities` (`network:egress`) and empty `dsh.labels`; the npm artifact was published before the capabilities wave and still warned DSC-11/13.
+
+
 ## [0.6.29] - 2026-10-19
 
 ### Fixed
@@ -65,7 +72,6 @@ All notable changes to this project are documented in this file.
 ### Changed
 
 - Correct the release date in the previous section, which was stamped with the literal string `undefined` by the release stamper. No content or behaviour change; the version is bumped only because npm will not republish an existing version.
-
 
 ## [Unreleased]
 
