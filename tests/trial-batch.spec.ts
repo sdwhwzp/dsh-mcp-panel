@@ -5,7 +5,6 @@ import type { ToolExecutionResult } from '@deepseek-ai/dsh-tools'
 import { mountHarness } from './harness.ts'
 
 type Tools = Parameters<ReturnType<typeof createTrialCaller>['runTrialCall']>[0]
-type BatchTools = Extract<Tools, { setExecutor: (...args: never[]) => unknown }>
 const limits = { timeoutMs: 1000, maxResultChars: 4000 }
 
 it('submits normalized resource arguments through one unlogged executor batch', async () => {
@@ -16,12 +15,11 @@ it('submits normalized resource arguments through one unlogged executor batch', 
     execute: () => Promise.resolve(null),
   })
   let captured: unknown
-  const tools: BatchTools = {
+  const tools: Tools = {
     get: name => harness.ctx.tools.get(name),
-    setExecutor: () => undefined,
     execute: async (input) => {
       captured = input
-      return { results: [{ result: { isError: false, value: null, content: [] } }] }
+      return { results: [{ callId: input.calls[0]!.id, result: { isError: false, value: null, content: [] } }], additionalContexts: [], concluded: false }
     },
   }
   const result = await createTrialCaller().runTrialCall(tools, undefined, undefined,
@@ -39,11 +37,11 @@ it('reports an empty batch and projects executor refusals without inventing succ
     output: { schema: { type: 'null' }, render: () => [] }, execute: () => Promise.resolve(null) })
   const caller = createTrialCaller()
   const request = { serverName: 'demo', toolName: 'mcp__demo__read', argsJson: '{}' }
-  const empty: Tools = { get: name => harness.ctx.tools.get(name), setExecutor: () => undefined,
-    execute: () => Promise.resolve({ results: [] }) }
+  const empty: Tools = { get: name => harness.ctx.tools.get(name),
+    execute: () => Promise.resolve({ results: [], additionalContexts: [], concluded: false }) }
   await expect(caller.runTrialCall(empty, undefined, undefined, request, limits)).rejects.toThrow('no result')
   const error: ToolExecutionResult = { isError: true, error: new Error('denied'), content: [] }
-  const refused: Tools = { ...empty, execute: () => Promise.resolve({ results: [{ result: error }] }) }
+  const refused: Tools = { ...empty, execute: input => Promise.resolve({ results: [{ callId: input.calls[0]!.id, result: error }], additionalContexts: [], concluded: false }) }
   const result = await caller.runTrialCall(refused, undefined, undefined, request, limits)
   expect(result.isError).toBe(true)
   expect(JSON.parse(result.resultJson)).toEqual({ error: { message: 'denied' }, content: [] })

@@ -1,25 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import { installProbeModelFilter, registerModelProbe } from '../src/probe-model-filter.ts'
+import { registerModelProbe } from '../src/probe-model-filter.ts'
+import { mountHarness } from './harness.ts'
 
 describe('Claude probe availability', () => {
-  it('follows the assembled provider on each turn and preserves other MCP tools', async () => {
-    const ctx = new Context()
+  it('follows the admitted provider on each turn and preserves other MCP tools', async () => {
+    const { ctx, agent } = await mountHarness()
     try {
-      await ctx.plugin(SystemPrompt)
-      const schemas = ['mcp_probe', 'mcp_search', 'shell'].map(name => ({
+      const definitions = ['mcp_probe', 'mcp_search', 'shell'].map(name => ({
         name, description: name, parameters: { type: 'object' as const, properties: {} },
+        output: { schema: { type: 'string' as const }, render: (_args: unknown, value: string) => [{ type: 'text' as const, text: value }] },
+        async execute() { return 'ok' },
       }))
-      ctx.systemPrompt.tools(() => ({ schemas }))
-      const dispose = installProbeModelFilter(ctx)
+      const dispose = registerModelProbe(ctx, definitions[0]!)
+      for (const definition of definitions.slice(1)) ctx.effect(() => ctx.tools.register(definition))
       let provider = 'claude'
-      // Model selection supplies the final provider after its delegated assembly.
-      ctx.on('system-prompt/assemble', async (_assembly, _context, next) => {
-        const assembled = await next()
-        return { ...assembled, variables: { ...assembled.variables, provider } }
-      })
-      const names = async () => (await ctx.systemPrompt.assemble()).tools.map(tool => tool.name)
+      const names = async () => {
+        const admitted = await ctx.tools.resolve({ agent, modelSelection: { provider, model: 'test' }, signal: new AbortController().signal })
+        try { return ctx.tools.schemas(agent, admitted).map(tool => tool.name) }
+        finally { admitted.dispose() }
+      }
       expect(await names()).toEqual(['mcp_search', 'shell'])
       provider = 'subscriptions-claude'
       expect(await names()).toEqual(['mcp_search', 'shell'])
@@ -29,9 +29,10 @@ describe('Claude probe availability', () => {
       expect(await names()).toEqual(['mcp_probe', 'mcp_search', 'shell'])
       provider = 'claude'
       expect(await names()).toEqual(['mcp_search', 'shell'])
-      expect(schemas.map(tool => tool.name)).toEqual(['mcp_probe', 'mcp_search', 'shell'])
+      expect(ctx.tools.schemas(agent).map(tool => tool.name)).toEqual(['mcp_probe', 'mcp_search', 'shell'])
       dispose()
-      expect(await names()).toEqual(['mcp_probe', 'mcp_search', 'shell'])
+      provider = 'deepseek'
+      expect(await names()).toEqual(['mcp_search', 'shell'])
     } finally {
       await ctx.fiber.dispose()
     }
